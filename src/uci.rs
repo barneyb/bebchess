@@ -29,7 +29,12 @@ where
 {
     let stream = reader
         .lines()
-        .map_ok(|line| parse_with_unknown(&line))
+        .map_ok(|line| {
+            // The generated parser will panic when passed "go " due to the
+            // trailing space, despite UciMessage's serialization putting one
+            // there. Weird asymmetry, but trimming mitigates the symptom.
+            parse_with_unknown(line.trim())
+        })
         .map_ok(|msg_list| msg_list[0].clone());
 
     Box::new(stream)
@@ -82,6 +87,7 @@ pub async fn run_loops(
                     };
                     inbound_consumer.send(Ok(msg)).await.unwrap();
                     if quit {
+                        // if we got a Quit, disconnect
                         aoutbh.abort();
                         break;
                     }
