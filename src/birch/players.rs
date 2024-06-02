@@ -1,10 +1,11 @@
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 
-use chess::{Color, Game};
+use chess::Color;
 use futures::SinkExt;
 use vampirc_uci::{UciFen, UciMessage};
 
+use crate::birch::birch_game::BirchGame;
 use crate::birch::player::Player;
 
 pub struct Players {
@@ -33,7 +34,7 @@ impl Players {
         .send(msg);
     }
 
-    pub fn next_turn(&mut self, game: &Box<Game>) {
+    pub fn next_turn(&mut self, game: &Box<BirchGame>) {
         let c = game.side_to_move();
         self.send(
             c,

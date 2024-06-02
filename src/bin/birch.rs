@@ -1,10 +1,10 @@
 use std::sync::mpsc;
 
-use chess::Action;
+use chess::Color;
 use chess::GameResult;
-use chess::{Color, Game};
 use vampirc_uci::UciMessage;
 
+use bebchess::birch::birch_game::BirchGame;
 use bebchess::birch::players::Players;
 
 const GERALD: &str = "/Users/barneyb/IdeaProjects/Senior-Project-Chess-AI/chess/engine/base_engine";
@@ -15,11 +15,16 @@ fn main() {
     println!("Hello, from BIRCH!");
     let (tx, rx) = mpsc::channel();
     let mut players = Players::new(tx, GERALD, GERALD);
-    let mut game = Box::new(Game::new());
-    let mut move_count: u32 = 1;
+    let mut game = Box::new(BirchGame::new());
 
+    // todo: need to handle an engine crash
     'message_loop: for (c, msg) in rx.iter() {
         match &msg {
+            UciMessage::Id {
+                name: Some(name), ..
+            } => {
+                println!("[{c:?} \"{name}\"]")
+            }
             UciMessage::Id { .. } | UciMessage::Option(_) | UciMessage::Info(_) => {}
             UciMessage::UciOk => {
                 // set options
@@ -33,17 +38,20 @@ fn main() {
             }
             UciMessage::BestMove { best_move: m, .. } => {
                 if c == game.side_to_move() {
-                    game.make_move(*m);
+                    if game.make_move(*m) {
+                        if c == Color::White {
+                            print!("{}. {m} {{ {game} }}", game.move_count());
+                        } else {
+                            println!(" {m} {{ {game} }}");
+                        }
+                    } else {
+                        panic!("{:?} made illegal '{m}' at '{}'", c, game)
+                    }
+                    game.draw_if_declarable();
                     if let Some(_) = game.result() {
-                        break 'message_loop;
-                    } else if game.can_declare_draw() {
-                        game.declare_draw();
+                        println!();
                         break 'message_loop;
                     } else {
-                        if c == Color::Black {
-                            println!("after {:>3}: {}", move_count, game.current_position());
-                            move_count += 1;
-                        }
                         players.next_turn(&game);
                     }
                 } else {
@@ -70,24 +78,7 @@ fn main() {
     }
     players.close();
     if let Some(gr) = game.result() {
-        let move_count = game
-            .actions()
-            .iter()
-            .filter(|a| {
-                if let Action::MakeMove(_) = a {
-                    true
-                } else {
-                    false
-                }
-            })
-            .count()
-            / 2;
-        println!(
-            "{:?} in {} moves: {}",
-            gr,
-            move_count,
-            game.current_position()
-        );
+        println!("{gr:?} in {} moves: {game}", game.move_count());
         if let Some(victor) = match gr {
             GameResult::WhiteCheckmates | GameResult::BlackResigns => Some(Color::White),
             GameResult::BlackCheckmates | GameResult::WhiteResigns => Some(Color::Black),
