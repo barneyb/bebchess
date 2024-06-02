@@ -32,6 +32,7 @@ async fn process_messages(
             match msg {
                 UciMessage::Quit => break,
                 UciMessage::Uci => {
+                    println!("I AM A GOAT"); //todo
                     msg_sender
                         .send(UciMessage::id_name("Rachel"))
                         .await
