@@ -2,7 +2,6 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 
 use chess::Color;
-use futures::SinkExt;
 use vampirc_uci::{UciFen, UciMessage};
 
 use crate::birch::birch_game::BirchGame;
@@ -47,8 +46,8 @@ impl Players {
         self.send(c, UciMessage::go())
     }
 
-    pub fn close(mut self) {
-        self.white.close();
-        self.black.close();
+    pub fn close(self) {
+        self.white.close().unwrap();
+        self.black.close().unwrap();
     }
 }

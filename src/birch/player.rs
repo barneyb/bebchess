@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::io;
 use std::process::{Command, ExitStatus};
 use std::sync::mpsc::Sender;
@@ -7,13 +6,11 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use chess::Color;
-use futures::SinkExt;
 use interactive_process::InteractiveProcess;
 use vampirc_uci::{parse_with_unknown, Serializable, UciMessage};
 
 pub struct Player {
     color: Color,
-    cmd: Command,
     proc: InteractiveProcess,
     sent_quit: bool,
 }
@@ -36,7 +33,7 @@ impl Player {
             Ok(line) => {
                 for msg in parse_with_unknown(&line) {
                     // println!("[{}] < \t{msg}", label(color));
-                    sender.lock().unwrap().send((color, msg));
+                    sender.lock().unwrap().send((color, msg)).unwrap();
                 }
             }
             Err(e) => {
@@ -46,7 +43,6 @@ impl Player {
         .unwrap();
         Player {
             color,
-            cmd,
             proc,
             sent_quit: false,
         }

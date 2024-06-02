@@ -103,7 +103,7 @@ impl Display for BirchGame {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut fen = self.game.current_position().to_string();
         if fen.ends_with(" 0 1") {
-            fen.split_off(fen.len() - 3);
+            fen.truncate(fen.len() - 3);
             fen += &format!("{} {}", self.halfmove_clock, self.fullmove_number)
         }
         f.write_str(&fen)

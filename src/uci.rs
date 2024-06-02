@@ -1,6 +1,6 @@
 use std::thread;
 
-use async_std::future::{ready, Future};
+use async_std::future::ready;
 use async_std::io;
 use async_std::prelude::*;
 use futures::channel::mpsc::{unbounded, UnboundedReceiver, UnboundedSender};
@@ -101,7 +101,7 @@ pub async fn run_loops(
         }
     };
 
-    join!(inb, aoutb);
+    let (_, _) = join!(inb, aoutb);
 }
 
 pub async fn run_std_loops(inbound_consumer: UciTrySender, outbound_source: UciReceiver) {

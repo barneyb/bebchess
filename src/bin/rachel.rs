@@ -1,7 +1,6 @@
 use std::io;
 use std::pin::Pin;
 
-use async_std::future::Future;
 use async_std::task::block_on;
 use futures::{join, SinkExt, Stream, StreamExt};
 use vampirc_uci::UciMessage;
