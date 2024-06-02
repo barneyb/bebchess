@@ -42,6 +42,7 @@ impl BirchGame {
     /// Alias of [Game::declare_draw] which better communicates that it both
     /// tests and acts (if appropriate).
     pub fn declare_draw_if_appropriate(&mut self) -> bool {
+        // todo: add a check for insufficient material
         self.game.declare_draw()
     }
 

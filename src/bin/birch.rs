@@ -26,14 +26,13 @@ fn main() {
     // println!("[SetUp \"1\"]");
 
     // todo: need to handle an engine crash
+    let mut pgn = String::new();
     let mut is_ready = [false; 2];
     'init_loop: for (c, msg) in rx.iter() {
         match &msg {
             UciMessage::Id {
                 name: Some(name), ..
-            } => {
-                println!("[{c:?} \"{name}\"]")
-            }
+            } => pgn += &format!("[{c:?} \"{name}\"]\n"),
             UciMessage::Id { .. } | UciMessage::Option(_) => {}
             UciMessage::UciOk => {
                 // set options
@@ -62,8 +61,10 @@ fn main() {
                 if c == game.side_to_move() {
                     if game.make_move(*m) {
                         if c == Color::White {
+                            pgn += &format!("{}. {m}", game.get_full_move_counter());
                             print!("{}. {m} {{ {game} }}", game.get_full_move_counter());
                         } else {
+                            pgn += &format!(" {m} ");
                             println!(" {m} {{ {game} }}");
                         }
                     } else {
@@ -71,7 +72,7 @@ fn main() {
                     }
                     game.declare_draw_if_appropriate();
                     if let Some(_) = game.result() {
-                        println!();
+                        println!(); // if white plays last, terminate the log
                         break 'message_loop;
                     } else {
                         players.next_turn(&game);
@@ -99,6 +100,9 @@ fn main() {
         }
     }
     players.close();
+
+    println!("\n{pgn}\n");
+
     if let Some(gr) = game.result() {
         println!("{gr:?} in {} moves: {game}", game.get_full_move_counter());
         if let Some(victor) = match gr {
