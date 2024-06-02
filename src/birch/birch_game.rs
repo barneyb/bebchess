@@ -103,8 +103,23 @@ impl Display for BirchGame {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut fen = self.game.current_position().to_string();
         if fen.ends_with(" 0 1") {
-            fen.truncate(fen.len() - 3);
-            fen += &format!("{} {}", self.halfmove_clock, self.fullmove_number)
+            let mut parts: Vec<_> = fen.split(" ").collect();
+            let l = parts.len();
+            let fmn = self.fullmove_number.to_string();
+            parts[l - 1] = &fmn;
+            let hmc = self.halfmove_clock.to_string();
+            parts[l - 2] = &hmc;
+            let mut ep = parts[l - 3].to_string();
+            if ep != "-" {
+                assert_eq!(2, ep.len());
+                if ep.ends_with("4") {
+                    ep = format!("{}3", &ep[0..1])
+                } else if ep.ends_with("5") {
+                    ep = format!("{}6", &ep[0..1])
+                };
+                parts[l - 3] = &ep
+            }
+            fen = parts.join(" ");
         }
         f.write_str(&fen)
     }
@@ -165,7 +180,47 @@ mod tests {
         assert!(game.make_move(ChessMove::from_str("b2b4").unwrap()));
         assert_eq!(Color::Black, game.side_to_move());
         assert_eq!(
-            "rnbqkbnr/pp1ppppp/8/8/1Pp1P3/5N2/P1PP1PPP/RNBQKB1R b KQkq b4 0 3", // ep target is wrong!
+            "rnbqkbnr/pp1ppppp/8/8/1Pp1P3/5N2/P1PP1PPP/RNBQKB1R b KQkq b3 0 3",
+            game.to_string()
+        );
+    }
+
+    #[test]
+    fn fen_enpassant() {
+        #[rustfmt::skip]
+        let moves = vec![
+            "e4",    "e6",   //  1.
+            "d4",    "d6",   //  2.
+            "Nf3",   "Be7",  //  3.
+            "Nc3",   "a6",   //  4.
+            "Bc4",   "Nc6",  //  5.
+            "d5",    "exd5", //  6.
+            "exd5",  "Ne5",  //  7.
+            "Nxe5",  "dxe5", //  8.
+            "O-O",   "Bd6",  //  9.
+            "Re1",   "h6",   // 10.
+            "Ne4",   "Ne7",  // 11.
+            "Nxd6+", "Qxd6", // 12.
+            "b3",    "O-O",  // 13.
+            "Bb2",   "f6",   // 14.
+            "a4",    "Ng6",  // 15.
+            "Ba3",   "c5",   // 16.
+            // "dxc6+",      // 17.
+        ];
+        let mut game = BirchGame::new();
+        for san in moves {
+            match ChessMove::from_san(&game.current_position(), san) {
+                Ok(m) => assert!(game.make_move(m)),
+                Err(e) => panic!("'{san}': {e}"),
+            }
+        }
+        assert_eq!(
+            "r1b2rk1/1p4p1/p2q1pnp/2pPp3/P1B5/BP6/2P2PPP/R2QR1K1 w - c6 0 17",
+            game.to_string()
+        );
+        assert!(game.make_move(ChessMove::from_san(&game.current_position(), "dc6").unwrap()));
+        assert_eq!(
+            "r1b2rk1/1p4p1/p1Pq1pnp/4p3/P1B5/BP6/2P2PPP/R2QR1K1 b - - 0 17",
             game.to_string()
         );
     }
