@@ -16,6 +16,11 @@ fn main() {
     let (tx, rx) = mpsc::channel();
     let mut players = Players::new(tx, GERALD, GERALD);
     let mut game = Box::new(BirchGame::new());
+    // use std::str::FromStr;
+    // let fen = "8/6n1/8/3k4/1K6/8/8/8 w - - 0 79";
+    // let mut game = Box::new(BirchGame::from_str(fen).expect("Valid FEN"));
+    // println!("[FEN \"{game}\"]");
+    // println!("[SetUp \"1\"]");
 
     // todo: need to handle an engine crash
     'message_loop: for (c, msg) in rx.iter() {
@@ -40,14 +45,14 @@ fn main() {
                 if c == game.side_to_move() {
                     if game.make_move(*m) {
                         if c == Color::White {
-                            print!("{}. {m} {{ {game} }}", game.move_count());
+                            print!("{}. {m} {{ {game} }}", game.get_full_move_counter());
                         } else {
                             println!(" {m} {{ {game} }}");
                         }
                     } else {
                         panic!("{:?} made illegal '{m}' at '{}'", c, game)
                     }
-                    game.draw_if_declarable();
+                    game.declare_draw_if_appropriate();
                     if let Some(_) = game.result() {
                         println!();
                         break 'message_loop;
@@ -78,7 +83,7 @@ fn main() {
     }
     players.close();
     if let Some(gr) = game.result() {
-        println!("{gr:?} in {} moves: {game}", game.move_count());
+        println!("{gr:?} in {} moves: {game}", game.get_full_move_counter());
         if let Some(victor) = match gr {
             GameResult::WhiteCheckmates | GameResult::BlackResigns => Some(Color::White),
             GameResult::BlackCheckmates | GameResult::WhiteResigns => Some(Color::Black),
